@@ -1,0 +1,28 @@
+{
+    "name": "oilstone/redis-cache",
+    "description": "Helper package for working with a Redis cache",
+    "homepage": "https://github.com/oilstone/redis-cache",
+    "authors": [
+        {
+            "name": "Online Solutions",
+            "email": "support@onlinesolutionsltd.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.0",
+        "illuminate/support": "^5.8",
+        "predis/predis": "^1.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Oilstone\\RedisCache\\": "src"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Oilstone\\RedisCache\\Integrations\\Laravel\\ServiceProvider"
+            ]
+        }
+    }
+}
