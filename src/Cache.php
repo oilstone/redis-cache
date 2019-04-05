@@ -4,30 +4,35 @@ namespace Oilstone\RedisCache;
 
 use Exception;
 use Illuminate\Support\Str;
+use Oilstone\GlobalClasses\MakeGlobal;
 use Predis\Client;
 
 /**
  * Class Cache
  * @package Oilstone\RedisCache
  */
-class Cache
+class Cache extends MakeGlobal
 {
     /**
      * @var Cache
      */
     protected static $instance;
+
     /**
      * @var bool
      */
     protected static $enabled = true;
+
     /**
      * @var Client
      */
     protected $client;
+
     /**
      * @var array|null
      */
     protected $parameters;
+
     /**
      * @var array|null
      */
@@ -63,37 +68,31 @@ class Cache
 
     /**
      * @param $name
-     * @param $arguments
-     * @return mixed
-     */
-    public static function __callStatic($name, $arguments)
-    {
-        if (static::$enabled) {
-            return (static::$instance)->{$name}(...$arguments);
-        }
-
-        return null;
-    }
-
-    /**
-     * @param $name
      * @return int
      */
     public static function has(string $name): int
     {
-        if (static::$enabled) {
-            return (static::instance())->client->exists(static::sanitizeKey($name));
+        if (static::instance()) {
+            return static::instance()->client->exists(static::sanitizeKey($name));
         }
 
         return 0;
     }
 
     /**
-     * @return Cache
+     * @return Cache|null
      */
-    public static function instance(): Cache
+    public static function instance(): ?Cache
     {
-        return static::$instance;
+        return static::enabled() ? static::$instance : null;
+    }
+
+    /**
+     * @return bool
+     */
+    public static function enabled(): bool
+    {
+        return static::$enabled;
     }
 
     /**
@@ -114,21 +113,15 @@ class Cache
     }
 
     /**
-     * @return bool
-     */
-    public static function enabled(): bool
-    {
-        return static::$enabled;
-    }
-
-    /**
      * @param string $name
      * @param $value
      * @param int|null $minutes
      */
     public static function set(string $name, $value, ?int $minutes = null)
     {
-        (static::instance())->put($name, $value, $minutes);
+        if (static::instance()) {
+            static::instance()->put($name, $value, $minutes);
+        }
     }
 
     /**
@@ -138,11 +131,11 @@ class Cache
      */
     public static function put(string $name, $value, ?int $minutes = null)
     {
-        if (static::$enabled) {
-            (static::instance())->client->set(static::sanitizeKey($name), serialize($value));
+        if (static::instance()) {
+            static::instance()->client->set(static::sanitizeKey($name), serialize($value));
 
             if (isset($minutes)) {
-                (static::instance())->client->expire(static::sanitizeKey($name), $minutes * 60);
+                static::instance()->client->expire(static::sanitizeKey($name), $minutes * 60);
             }
         }
     }
@@ -166,8 +159,8 @@ class Cache
      */
     public static function get(string $name)
     {
-        if (static::$enabled) {
-            return unserialize((static::instance())->client->get(static::sanitizeKey($name)));
+        if (static::instance()) {
+            return unserialize(static::instance()->client->get(static::sanitizeKey($name)));
         }
 
         return null;
@@ -178,17 +171,9 @@ class Cache
      */
     public static function delete(string $name)
     {
-        if (static::$enabled) {
-            (static::instance())->client->expireat(static::sanitizeKey($name), 0);
+        if (static::instance()) {
+            static::instance()->client->expireat(static::sanitizeKey($name), 0);
         }
-    }
-
-    /**
-     * Make the current object a global instance
-     */
-    public function setAsGlobal()
-    {
-        static::$instance = $this;
     }
 
     /**
@@ -197,7 +182,7 @@ class Cache
      */
     public function __get($name)
     {
-        if (static::$enabled) {
+        if (static::instance()) {
             return $this->client->get(static::sanitizeKey($name));
         }
 
@@ -210,7 +195,7 @@ class Cache
      */
     public function __set($name, $value)
     {
-        if (static::$enabled) {
+        if (static::instance()) {
             $this->client->set(static::sanitizeKey($name), $value);
         }
     }
@@ -222,7 +207,7 @@ class Cache
      */
     public function __call($name, $arguments)
     {
-        if (static::$enabled) {
+        if (static::instance()) {
             return $this->client->{$name}(...$arguments);
         }
 

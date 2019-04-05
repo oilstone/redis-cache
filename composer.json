@@ -2,6 +2,7 @@
     "name": "oilstone/redis-cache",
     "description": "Helper package for working with a Redis cache",
     "homepage": "https://github.com/oilstone/redis-cache",
+    "license": "MIT",
     "authors": [
         {
             "name": "Online Solutions",
@@ -11,7 +12,8 @@
     "require": {
         "php": ">=7.1.0",
         "illuminate/support": "^5.5",
-        "predis/predis": "^1.1"
+        "predis/predis": "^1.1",
+        "oilstone/global-classes": "^1.0"
     },
     "autoload": {
         "psr-4": {
