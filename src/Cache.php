@@ -101,7 +101,9 @@ class Cache extends MakeGlobal
      */
     protected static function sanitizeKey(string $name): string
     {
-        return trim(Str::slug($name));
+        return implode(':', array_map(function ($name) {
+            return trim(Str::slug($name));
+        }, explode(':', $name)));
     }
 
     /**
