@@ -98,7 +98,7 @@ class Cache extends MakeGlobal
      */
     public function enabled(): bool
     {
-        return $this->enabled();
+        return $this->enabled;
     }
 
     /**
