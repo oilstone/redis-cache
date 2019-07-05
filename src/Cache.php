@@ -39,11 +39,17 @@ class Cache extends MakeGlobal
     protected $options;
 
     /**
+     * @var string|null
+     */
+    protected $prefix;
+
+    /**
      * Cache constructor.
      * @param mixed|null $parameters
      * @param mixed|null $options
+     * @param null $prefix
      */
-    public function __construct($parameters = null, $options = null)
+    public function __construct($parameters = null, $options = null, $prefix = null)
     {
         $this->client = new Client($parameters, $options);
 
@@ -56,8 +62,8 @@ class Cache extends MakeGlobal
         }
 
         $this->parameters = $parameters;
-
         $this->options = $options;
+        $this->prefix = $prefix;
     }
 
     /**
@@ -107,9 +113,32 @@ class Cache extends MakeGlobal
      */
     protected static function sanitizeKey(string $name): string
     {
+        if (static::instance()) {
+            $name = static::instance()->getPrefix() . ':' . $name;
+        }
+
         return implode(':', array_map(function ($name) {
             return trim(Str::slug($name));
         }, explode(':', $name)));
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getPrefix(): ?string
+    {
+        return $this->prefix;
+    }
+
+    /**
+     * @param string|null $prefix
+     * @return Cache
+     */
+    public function setPrefix(?string $prefix): Cache
+    {
+        $this->prefix = $prefix;
+
+        return $this;
     }
 
     /**
