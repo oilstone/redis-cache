@@ -5,6 +5,7 @@
 namespace Oilstone\RedisCache\Integrations\Laravel;
 
 use Illuminate\Support\ServiceProvider as LaravelServiceProvider;
+use Illuminate\Support\Str;
 use Oilstone\RedisCache\Cache;
 
 /**
@@ -25,7 +26,7 @@ class ServiceProvider extends LaravelServiceProvider
         $this->mergeConfigFrom($configPath, 'redis-cache');
 
         // Create a new cache instance
-        $cache = new Cache(explode(",", config('redis-cache.ips')), ['cluster' => 'redis']);
+        $cache = new Cache(explode(",", config('redis-cache.ips')), ['cluster' => 'redis'], Str::slug(config('app.name', '') ?: null));
 
         // Make the defined cache instance global
         $cache->setAsGlobal();
