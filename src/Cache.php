@@ -119,7 +119,7 @@ class Cache extends MakeGlobal
 
         return implode(':', array_map(function ($name) {
             return trim(Str::slug($name));
-        }, explode(':', $name)));
+        }, explode(':', trim($name, ':'))));
     }
 
     /**
