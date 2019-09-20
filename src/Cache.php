@@ -75,20 +75,15 @@ class Cache extends MakeGlobal
     }
 
     /**
-     * @param $name
-     * @return int
+     * @param string $name
+     * @param $value
+     * @param int|null $minutes
      */
-    public static function has(string $name): int
+    public static function set(string $name, $value, ?int $minutes = null)
     {
         if (static::instance()) {
-            try {
-                return static::instance()->client->exists(static::sanitizeKey($name));
-            } catch (Exception $e) {
-                static::instance()->disable();
-            }
+            static::instance()->put($name, $value, $minutes);
         }
-
-        return 0;
     }
 
     /**
@@ -105,6 +100,26 @@ class Cache extends MakeGlobal
     public function enabled(): bool
     {
         return $this->enabled;
+    }
+
+    /**
+     * @param string $name
+     * @param $value
+     * @param int|null $minutes
+     */
+    public static function put(string $name, $value, ?int $minutes = null)
+    {
+        if (static::instance()) {
+            try {
+                static::instance()->client->set(static::sanitizeKey($name), serialize($value));
+
+                if (isset($minutes)) {
+                    static::instance()->client->expire(static::sanitizeKey($name), $minutes * 60);
+                }
+            } catch (Exception $e) {
+                static::instance()->disable();
+            }
+        }
     }
 
     /**
@@ -150,38 +165,6 @@ class Cache extends MakeGlobal
     }
 
     /**
-     * @param string $name
-     * @param $value
-     * @param int|null $minutes
-     */
-    public static function set(string $name, $value, ?int $minutes = null)
-    {
-        if (static::instance()) {
-            static::instance()->put($name, $value, $minutes);
-        }
-    }
-
-    /**
-     * @param string $name
-     * @param $value
-     * @param int|null $minutes
-     */
-    public static function put(string $name, $value, ?int $minutes = null)
-    {
-        if (static::instance()) {
-            try {
-                static::instance()->client->set(static::sanitizeKey($name), serialize($value));
-
-                if (isset($minutes)) {
-                    static::instance()->client->expire(static::sanitizeKey($name), $minutes * 60);
-                }
-            } catch (Exception $e) {
-                static::instance()->disable();
-            }
-        }
-    }
-
-    /**
      * @param string $string
      * @return mixed
      */
@@ -223,6 +206,42 @@ class Cache extends MakeGlobal
                 static::instance()->disable();
             }
         }
+    }
+
+    /**
+     * @param string $name
+     * @param callable $createCallback
+     * @param int|null $minutes
+     * @return mixed
+     */
+    public static function fetchOrCreate(string $name, callable $createCallback, ?int $minutes = null)
+    {
+        if (static::has($name)) {
+            return static::get($name);
+        }
+
+        $value = $createCallback();
+
+        static::put($name, $value, $minutes);
+
+        return $value;
+    }
+
+    /**
+     * @param $name
+     * @return int
+     */
+    public static function has(string $name): int
+    {
+        if (static::instance()) {
+            try {
+                return static::instance()->client->exists(static::sanitizeKey($name));
+            } catch (Exception $e) {
+                static::instance()->disable();
+            }
+        }
+
+        return 0;
     }
 
     /**
