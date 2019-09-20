@@ -212,9 +212,10 @@ class Cache extends MakeGlobal
      * @param string $name
      * @param callable $createCallback
      * @param int|null $minutes
+     * @param bool $cacheOnNull
      * @return mixed
      */
-    public static function fetchOrCreate(string $name, callable $createCallback, ?int $minutes = null)
+    public static function fetchOrCreate(string $name, callable $createCallback, ?int $minutes = null, bool $cacheOnNull = false)
     {
         if (static::has($name)) {
             return static::get($name);
@@ -222,7 +223,9 @@ class Cache extends MakeGlobal
 
         $value = $createCallback();
 
-        static::put($name, $value, $minutes);
+        if (!is_null($value) || $cacheOnNull) {
+            static::put($name, $value, $minutes);
+        }
 
         return $value;
     }
