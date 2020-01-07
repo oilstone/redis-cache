@@ -12,8 +12,9 @@
     "require": {
         "php": ">=7.1.0",
         "illuminate/support": "^5.5",
-        "predis/predis": "^1.1",
-        "oilstone/global-classes": "^1.0"
+        "oilstone/global-classes": "^1.0",
+        "oilstone/logging": "^1.0",
+        "ext-redis": "*"
     },
     "autoload": {
         "psr-4": {
