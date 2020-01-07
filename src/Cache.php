@@ -1,11 +1,21 @@
 <?php
 
+/**
+ * @noinspection PhpRedundantCatchClauseInspection
+ * @noinspection PhpUnused
+ */
+
 namespace Oilstone\RedisCache;
 
-use Exception;
 use Illuminate\Support\Str;
+use Monolog\Handler\RotatingFileHandler;
+use Monolog\Logger;
 use Oilstone\GlobalClasses\MakeGlobal;
-use Predis\Client;
+use Oilstone\Logging\Log;
+use Redis;
+use RedisCluster;
+use RedisClusterException;
+use RedisException;
 
 /**
  * Class Cache
@@ -24,14 +34,19 @@ class Cache extends MakeGlobal
     protected $enabled = false;
 
     /**
-     * @var Client
+     * @var bool
+     */
+    protected $logging = false;
+
+    /**
+     * @var Redis|RedisCluster
      */
     protected $client;
 
     /**
      * @var array|null
      */
-    protected $parameters;
+    protected $connectionString;
 
     /**
      * @var array|null
@@ -44,26 +59,75 @@ class Cache extends MakeGlobal
     protected $prefix;
 
     /**
+     * @var Log
+     */
+    protected $log;
+
+    /**
      * Cache constructor.
-     * @param mixed|null $parameters
+     * @param mixed|null $connectionString
      * @param mixed|null $options
      * @param null $prefix
      */
-    public function __construct($parameters = null, $options = null, $prefix = null)
+    public function __construct($connectionString = null, $options = null, $prefix = null)
     {
-        $this->client = new Client($parameters, $options);
-
-        try {
-            $this->client->connect();
-
-            $this->enable();
-        } catch (Exception $exception) {
-            //
-        }
-
-        $this->parameters = $parameters;
+        $this->connectionString = $connectionString;
         $this->options = $options;
         $this->prefix = $prefix;
+
+        if (!$connectionString) {
+            return;
+        }
+
+        if (is_array($connectionString) && count($connectionString) === 1) {
+            $connectionString = $connectionString[0];
+        }
+
+        if (isset($options['logging'])) {
+            $this->logging = boolval($options['logging']);
+            $this->log = Log::instance();
+
+            if ($options['logPath'] ?? false) {
+                $logger = new Logger($options['logName'] ?? 'redis');
+                $logger->pushHandler(new RotatingFileHandler($options['logPath'], 10, $options['logLevel'] ?? Logger::DEBUG));
+
+                $this->log = new Log($logger);
+                $this->log->enable();
+            }
+        }
+
+        try {
+            if (is_array($connectionString)) {
+                $this->client = new RedisCluster(null, array_map(function ($node): string {
+                    $node = parse_url($node);
+
+                    return $node['host'] . ':' . ($node['port'] ?? 6379);
+                }, $connectionString), $options['timeout'] ?? 1, $options['readTimeout'] ?? 1);
+            } else {
+                $this->client = new Redis();
+
+                $connectionString = parse_url($connectionString);
+
+                $this->client->connect(
+                    $connectionString['host'],
+                    $connectionString['port'] ?? 6379,
+                    $options['timeout'] ?? 1,
+                    $connectionString['reserved'] ?? null,
+                    $connectionString['retryInterval'] ?? 0,
+                    $options['readTimeout'] ?? 1
+                );
+            }
+
+            $this->enable();
+        } catch (RedisException $e) {
+            $this->disable();
+
+            $this->logEntry($e->getMessage(), 'error');
+        } catch (RedisClusterException $e) {
+            $this->disable();
+
+            $this->logEntry($e->getMessage(), 'error');
+        }
     }
 
     /**
@@ -72,6 +136,17 @@ class Cache extends MakeGlobal
     public function enable()
     {
         $this->enabled = true;
+    }
+
+    /**
+     * @param string $logEntry
+     * @param string $level
+     */
+    protected function logEntry(string $logEntry, string $level = 'info'): void
+    {
+        if ($this->logging && $this->log) {
+            $this->log->{$level}($logEntry);
+        }
     }
 
     /**
@@ -111,13 +186,23 @@ class Cache extends MakeGlobal
     {
         if (static::instance()) {
             try {
-                static::instance()->client->set(static::sanitizeKey($name), serialize($value));
+                $name = static::sanitizeKey($name);
 
                 if (isset($minutes)) {
-                    static::instance()->client->expire(static::sanitizeKey($name), $minutes * 60);
+                    static::instance()->client->setex($name, $minutes * 60, serialize($value));
+                } else {
+                    static::instance()->client->set($name, serialize($value));
                 }
-            } catch (Exception $e) {
+
+                static::instance()->logEntry('Set cache key ' . $name, 'info');
+            } catch (RedisException $e) {
                 static::instance()->disable();
+
+                static::instance()->logEntry($e->getMessage(), 'error');
+            } catch (RedisClusterException $e) {
+                static::instance()->disable();
+
+                static::instance()->logEntry($e->getMessage(), 'error');
             }
         }
     }
@@ -185,9 +270,21 @@ class Cache extends MakeGlobal
     {
         if (static::instance()) {
             try {
-                return unserialize(static::instance()->client->get(static::sanitizeKey($name)));
-            } catch (Exception $e) {
+                $name = static::sanitizeKey($name);
+
+                $value = unserialize(static::instance()->client->get($name));
+
+                static::instance()->logEntry('Get cache key ' . $name, 'info');
+
+                return $value;
+            } catch (RedisException $e) {
                 static::instance()->disable();
+
+                static::instance()->logEntry($e->getMessage(), 'error');
+            } catch (RedisClusterException $e) {
+                static::instance()->disable();
+
+                static::instance()->logEntry($e->getMessage(), 'error');
             }
         }
 
@@ -201,9 +298,19 @@ class Cache extends MakeGlobal
     {
         if (static::instance()) {
             try {
-                static::instance()->client->expireat(static::sanitizeKey($name), 0);
-            } catch (Exception $e) {
+                $name = static::sanitizeKey($name);
+
+                static::instance()->client->unlink($name);
+
+                static::instance()->logEntry('Delete cache key ' . $name, 'info');
+            } catch (RedisException $e) {
                 static::instance()->disable();
+
+                static::instance()->logEntry($e->getMessage(), 'error');
+            } catch (RedisClusterException $e) {
+                static::instance()->disable();
+
+                static::instance()->logEntry($e->getMessage(), 'error');
             }
         }
     }
@@ -238,9 +345,21 @@ class Cache extends MakeGlobal
     {
         if (static::instance()) {
             try {
-                return static::instance()->client->exists(static::sanitizeKey($name));
-            } catch (Exception $e) {
+                $name = static::sanitizeKey($name);
+
+                $exists = static::instance()->client->exists($name);
+
+                static::instance()->logEntry('Check for cache key ' . $name, 'info');
+
+                return $exists;
+            } catch (RedisException $e) {
                 static::instance()->disable();
+
+                static::instance()->logEntry($e->getMessage(), 'error');
+            } catch (RedisClusterException $e) {
+                static::instance()->disable();
+
+                static::instance()->logEntry($e->getMessage(), 'error');
             }
         }
 
@@ -267,7 +386,7 @@ class Cache extends MakeGlobal
     public function __set($name, $value)
     {
         if (static::instance()) {
-            $this->client->set(static::sanitizeKey($name), $value);
+            $this->client->setex(static::sanitizeKey($name), $value, 3600);
         }
     }
 
@@ -286,9 +405,9 @@ class Cache extends MakeGlobal
     }
 
     /**
-     * @return Client
+     * @return Redis|RedisCluster
      */
-    public function client(): Client
+    public function client()
     {
         return $this->client;
     }
