@@ -3,9 +3,12 @@
 /**
  * @noinspection PhpComposerExtensionStubsInspection
  * @noinspection PhpUnused
+ * @noinspection PhpMissingFieldTypeInspection
  */
 
 namespace Oilstone\RedisCache\Managers;
+
+use Redis;
 
 /**
  * Class PhpRedis
@@ -14,19 +17,22 @@ namespace Oilstone\RedisCache\Managers;
 class PhpRedis extends Manager
 {
     /**
-     * PhpRedis constructor.
+     * @var Redis
      */
-    public function __construct()
-    {
-        //
-    }
+    protected $client;
 
     /**
      * @inheritDoc
      */
     public function get(string $key, $default = null)
     {
-        // TODO: Implement get() method.
+        $value = $this->client->get($key);
+
+        if ($value === false) {
+            return $default;
+        }
+
+        return $value;
     }
 
     /**
@@ -34,7 +40,7 @@ class PhpRedis extends Manager
      */
     public function put(string $key, $value, $ttl = null): bool
     {
-        // TODO: Implement put() method.
+        return $this->client->set($key, $value, $ttl);
     }
 
     /**
@@ -42,7 +48,7 @@ class PhpRedis extends Manager
      */
     public function decrement(string $key, $value = 1)
     {
-        // TODO: Implement decrement() method.
+        return $this->client->decrBy($key, $value);
     }
 
     /**
@@ -50,7 +56,7 @@ class PhpRedis extends Manager
      */
     public function increment(string $key, $value = 1)
     {
-        // TODO: Implement increment() method.
+        return $this->client->incrBy($key, $value);
     }
 
     /**
@@ -58,6 +64,33 @@ class PhpRedis extends Manager
      */
     public function forget(string $key): bool
     {
-        // TODO: Implement forget() method.
+        return $this->client->del($key);
+    }
+
+    /**
+     * @return void
+     */
+    protected function connect(): void
+    {
+        $this->client = new Redis();
+
+        $this->client->connect(
+            $this->resolveConnection($this->config ?? []),
+            $this->config['port'] ?? 6379,
+            $this->config['options']['timeout'] ?? 0,
+            $this->config['options']['reserved'] ?? null,
+            $this->config['options']['retryInterval'] ?? 0,
+            $this->config['options']['readTimeout'] ?? 0,
+        );
+
+        $this->client->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_PHP);
+
+        if (isset($this->config['options']['prefix'])) {
+            $this->client->setOption(Redis::OPT_PREFIX, $this->config['options']['prefix'] . ':');
+        }
+
+        if ($this->config['options']['parameters']['password'] ?? false) {
+            $this->client->auth($this->config['options']['parameters']['password']);
+        }
     }
 }

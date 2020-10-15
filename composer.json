@@ -10,11 +10,13 @@
         }
     ],
     "require": {
-        "php": ">=7.1.0",
-        "illuminate/container": "^7.0|^8.0"
+        "php": ">=7.4.0",
+        "illuminate/container": "^7.0|^8.0",
+        "predis/predis": "^1.1"
     },
     "suggest": {
-        "ext-redis": "Needed to use PhpRedis manager class"
+        "ext-redis": "Needed to use PhpRedis or PhpRedisCluster manager classes",
+        "predis/predis": "Needed to use Predis manager class"
     },
     "autoload": {
         "psr-4": {

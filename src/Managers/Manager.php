@@ -2,6 +2,7 @@
 
 /**
  * @noinspection PhpUnused
+ * @noinspection PhpMissingFieldTypeInspection
  */
 
 namespace Oilstone\RedisCache\Managers;
@@ -16,6 +17,51 @@ use DateTimeInterface;
  */
 abstract class Manager
 {
+    /**
+     * @var array
+     */
+    protected $config;
+
+    /**
+     * @var string|null
+     */
+    protected $scheme = null;
+
+    /**
+     * @var string|null
+     */
+    protected $host = '127.0.0.1';
+
+    /**
+     * @var int
+     */
+    protected $port = 6379;
+
+    /**
+     * @var bool
+     */
+    protected $appendPort = false;
+
+    /**
+     * PhpRedis constructor.
+     * @param array|string $config
+     */
+    public function __construct($config = [])
+    {
+        if (is_string($config)) {
+            $config = ['url' => $config];
+        }
+
+        $this->config = $config;
+
+        $this->connect();
+    }
+
+    /**
+     * @return void
+     */
+    abstract protected function connect(): void;
+
     /**
      * Store an item in the cache if the key does not exist.
      *
@@ -181,5 +227,26 @@ abstract class Manager
     public function forever(string $key, $value): bool
     {
         return $this->put($key, $value);
+    }
+
+    /**
+     * @param mixed $connection
+     * @return string
+     */
+    protected function resolveConnection($connection): string
+    {
+        if (!is_array($connection)) {
+            return $connection;
+        }
+
+        if ($connection['url'] ?? false) {
+            return $connection['url'];
+        }
+
+        $scheme = $connection['scheme'] ?? $this->config['scheme'] ?? $this->scheme;
+        $host = $connection['host'] ?? $this->config['host'] ?? $this->host;
+        $port = $connection['port'] ?? $this->config['port'] ?? $this->port;
+
+        return ($scheme ? $scheme . '://' : '') . $host . ($this->appendPort ? ':' . $port : '');
     }
 }
