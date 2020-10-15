@@ -11,6 +11,7 @@ use DateInterval;
 use DateTimeInterface;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Container\BindingResolutionException;
+use Oilstone\RedisCache\Managers\Manager;
 
 /**
  * Class Cache
@@ -38,14 +39,22 @@ class Cache
      */
     public static function __callStatic($name, $arguments)
     {
-        try {
-            if ($cacheManager = Container::getInstance()->make('cache')) {
-                return $cacheManager->{$name}(...$arguments);
-            }
-        } catch (BindingResolutionException $e) {
-            //
+        if ($cacheManager = static::instance()) {
+            return $cacheManager->{$name}(...$arguments);
         }
 
         return null;
+    }
+
+    /**
+     * @return Manager|object|null
+     */
+    public static function instance()
+    {
+        try {
+            return Container::getInstance()->make('cache');
+        } catch (BindingResolutionException $e) {
+            return null;
+        }
     }
 }
