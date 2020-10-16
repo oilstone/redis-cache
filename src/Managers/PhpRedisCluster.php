@@ -34,14 +34,14 @@ class PhpRedisCluster extends PhpRedis
     protected function connect(): void
     {
         $this->client = new RedisCluster(
-            $this->config['options']['connection_name'] ?? null,
+            $this->config['name'] ?? null,
             array_map(function ($seed) {
                 return $this->resolveConnection($seed);
-            }, $this->config['seeds'] ?? [[]]),
+            }, $this->config['connections'] ?? [[]]),
             $this->config['options']['timeout'] ?? null,
             $this->config['options']['read_timeout'] ?? null,
             $this->config['options']['persistent'] ?? false,
-            $this->config['options']['parameters']['password'] ?? null
+            $this->config['auth']['password'] ?? null
         );
 
         $this->client->setOption(RedisCluster::OPT_SERIALIZER, RedisCluster::SERIALIZER_PHP);

@@ -75,8 +75,8 @@ class PhpRedis extends Manager
         $this->client = new Redis();
 
         $this->client->connect(
-            $this->resolveConnection($this->config ?? []),
-            $this->config['port'] ?? 6379,
+            $this->resolveConnection($this->config['connections'][0] ?? []),
+            $this->config['connections'][0]['port'] ?? 6379,
             $this->config['options']['timeout'] ?? 0,
             $this->config['options']['reserved'] ?? null,
             $this->config['options']['retryInterval'] ?? 0,
@@ -89,8 +89,8 @@ class PhpRedis extends Manager
             $this->client->setOption(Redis::OPT_PREFIX, $this->config['options']['prefix'] . ':');
         }
 
-        if ($this->config['options']['parameters']['password'] ?? false) {
-            $this->client->auth($this->config['options']['parameters']['password']);
+        if ($this->config['auth']['password'] ?? false) {
+            $this->client->auth($this->config['auth']['password']);
         }
     }
 }

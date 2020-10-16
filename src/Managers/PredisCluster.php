@@ -27,6 +27,6 @@ class PredisCluster extends Predis
 
         $this->client = new Client(array_map(function ($seed) {
             return $this->resolveConnection($seed);
-        }, $this->config['seeds'] ?? [[]]), $options);
+        }, $this->config['connections'] ?? [[]]), $options);
     }
 }
