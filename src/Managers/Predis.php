@@ -88,11 +88,16 @@ class Predis extends Manager
     protected function connect(): void
     {
         $options = [];
+        $connectionString = $this->resolveConnection($this->config['connections'][0] ?? []);
 
         if (isset($this->config['options']['prefix'])) {
             $options['prefix'] = $this->config['options']['prefix'] . ':';
         }
 
-        $this->client = new Client($this->resolveConnection($this->config['connections'][0] ?? []), $options);
+        if (isset($this->config['auth']['password'])) {
+            $connectionString .= '?password=' . $this->config['auth']['password'];
+        }
+
+        $this->client = new Client($connectionString, $options);
     }
 }

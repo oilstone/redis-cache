@@ -26,7 +26,7 @@ class PredisCluster extends Predis
         }
 
         $this->client = new Client(array_map(function ($seed) {
-            return $this->resolveConnection($seed);
+            return $this->resolveConnection($seed) . (isset($this->config['auth']['password']) ? '?password=' . $this->config['auth']['password'] : '');
         }, $this->config['connections'] ?? [[]]), $options);
     }
 }
