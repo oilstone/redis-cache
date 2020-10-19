@@ -233,7 +233,7 @@ abstract class Manager
      * @param mixed $connection
      * @return string
      */
-    protected function resolveConnection($connection): string
+    protected function resolveConnection($connection)
     {
         if (!is_array($connection)) {
             return $connection;

@@ -19,14 +19,23 @@ class PredisCluster extends Predis
      */
     protected function connect(): void
     {
-        $options = ['cluster' => 'predis'];
+        $options = ['cluster' => 'redis'];
+        $connections = array_map(function ($connection) {
+            return $this->resolveConnection($connection);
+        }, $this->config['connections'] ?? [[]]);
 
         if (isset($this->config['options']['prefix'])) {
             $options['prefix'] = $this->config['options']['prefix'] . ':';
         }
 
-        $this->client = new Client(array_map(function ($seed) {
-            return $this->resolveConnection($seed) . (isset($this->config['auth']['password']) ? '?password=' . $this->config['auth']['password'] : '');
-        }, $this->config['connections'] ?? [[]]), $options);
+        if (isset($connections[0]['password'])) {
+            $options['password'] = $connections[0]['password'];
+        }
+
+        if (isset($connections[0]['scheme'])) {
+            $options['scheme'] = $connections[0]['scheme'];
+        }
+
+        $this->client = new Client($connections, $options);
     }
 }

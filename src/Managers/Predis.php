@@ -88,16 +88,39 @@ class Predis extends Manager
     protected function connect(): void
     {
         $options = [];
-        $connectionString = $this->resolveConnection($this->config['connections'][0] ?? []);
+        $connection = $this->resolveConnection($this->config['connections'][0] ?? []);
 
         if (isset($this->config['options']['prefix'])) {
             $options['prefix'] = $this->config['options']['prefix'] . ':';
         }
 
-        if (isset($this->config['auth']['password'])) {
-            $connectionString .= '?password=' . $this->config['auth']['password'];
+        $this->client = new Client($connection, $options);
+    }
+
+    /**
+     * @param mixed $connection
+     * @return array
+     */
+    protected function resolveConnection($connection)
+    {
+        if (!is_array($connection)) {
+            return $connection;
         }
 
-        $this->client = new Client($connectionString, $options);
+        if ($connection['url'] ?? false) {
+            return $connection['url'];
+        }
+
+        $connection = [
+            'scheme' => $connection['scheme'] ?? $this->config['scheme'] ?? $this->scheme,
+            'host' => $connection['host'] ?? $this->config['host'] ?? $this->host,
+            'port' => $connection['port'] ?? $this->config['port'] ?? $this->port,
+        ];
+
+        if (isset($this->config['auth']['password'])) {
+            $connection['password'] = $this->config['auth']['password'];
+        }
+
+        return $connection;
     }
 }
