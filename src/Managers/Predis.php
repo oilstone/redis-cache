@@ -90,7 +90,7 @@ class Predis extends Manager
         $options = [];
         $connection = $this->resolveConnection($this->config['connections'][0] ?? []);
 
-        if (isset($this->config['options']['prefix'])) {
+        if ($this->config['options']['prefix'] ?? false) {
             $options['prefix'] = $this->config['options']['prefix'] . ':';
         }
 

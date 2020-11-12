@@ -46,7 +46,7 @@ class PhpRedisCluster extends PhpRedis
 
         $this->client->setOption(RedisCluster::OPT_SERIALIZER, RedisCluster::SERIALIZER_PHP);
 
-        if (isset($this->config['options']['prefix'])) {
+        if ($this->config['options']['prefix'] ?? false) {
             $this->client->setOption(RedisCluster::OPT_PREFIX, $this->config['options']['prefix'] . ':');
         }
 

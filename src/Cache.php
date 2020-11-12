@@ -33,6 +33,11 @@ use Oilstone\RedisCache\Managers\Manager;
 class Cache
 {
     /**
+     * @var string
+     */
+    protected static string $defaultInstanceBinding = 'cache';
+
+    /**
      * @param $name
      * @param $arguments
      * @return mixed|null
@@ -47,14 +52,27 @@ class Cache
     }
 
     /**
+     * @param string|null $binding
      * @return Manager|object|null
      */
-    public static function instance()
+    public static function instance(?string $binding = null)
     {
+        if (is_null($binding)) {
+            $binding = static::$defaultInstanceBinding;
+        }
+
         try {
-            return Container::getInstance()->make('cache');
+            return Container::getInstance()->make($binding);
         } catch (BindingResolutionException $e) {
             return null;
         }
+    }
+
+    /**
+     * @param string $defaultInstanceBinding
+     */
+    public static function setDefaultInstanceBinding(string $defaultInstanceBinding): void
+    {
+        self::$defaultInstanceBinding = $defaultInstanceBinding;
     }
 }

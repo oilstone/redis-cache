@@ -85,7 +85,7 @@ class PhpRedis extends Manager
 
         $this->client->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_PHP);
 
-        if (isset($this->config['options']['prefix'])) {
+        if ($this->config['options']['prefix'] ?? false) {
             $this->client->setOption(Redis::OPT_PREFIX, $this->config['options']['prefix'] . ':');
         }
 

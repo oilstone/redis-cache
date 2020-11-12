@@ -24,7 +24,7 @@ class PredisCluster extends Predis
             return $this->resolveConnection($connection);
         }, $this->config['connections'] ?? [[]]);
 
-        if (isset($this->config['options']['prefix'])) {
+        if ($this->config['options']['prefix'] ?? false) {
             $options['prefix'] = $this->config['options']['prefix'] . ':';
         }
 
