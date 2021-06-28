@@ -10,21 +10,16 @@
         }
     ],
     "require": {
-        "php": ">=7.1.0",
-        "illuminate/support": "^5.5|^5.6|^5.7|^5.8|^6.0|^7.0|^8.0",
-        "predis/predis": "^1.1",
-        "oilstone/global-classes": "^1.0"
+        "php": ">=7.4.0",
+        "illuminate/container": "^7.0|^8.0"
+    },
+    "suggest": {
+        "ext-redis": "Needed to use PhpRedis or PhpRedisCluster manager classes",
+        "predis/predis": "Needed to use Predis manager class"
     },
     "autoload": {
         "psr-4": {
             "Oilstone\\RedisCache\\": "src"
-        }
-    },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Oilstone\\RedisCache\\Integrations\\Laravel\\ServiceProvider"
-            ]
         }
     }
 }
