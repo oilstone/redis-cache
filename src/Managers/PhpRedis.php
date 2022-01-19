@@ -22,6 +22,14 @@ class PhpRedis extends Manager
     protected $client;
 
     /**
+     * @return Redis
+     */
+    public function client(): Redis
+    {
+        return $this->client;
+    }
+
+    /**
      * @inheritDoc
      */
     public function get(string $key, $default = null)

@@ -34,6 +34,14 @@ class Predis extends Manager
     protected $appendPort = true;
 
     /**
+     * @return Predis\Client
+     */
+    public function client(): Client
+    {
+        return $this->client;
+    }
+
+    /**
      * @inheritDoc
      */
     public function get(string $key, $default = null)
