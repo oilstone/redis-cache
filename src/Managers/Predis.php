@@ -34,7 +34,7 @@ class Predis extends Manager
     protected $appendPort = true;
 
     /**
-     * @return Predis\Client
+     * @return Client
      */
     public function client(): Client
     {
