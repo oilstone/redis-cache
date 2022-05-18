@@ -11,7 +11,7 @@
     ],
     "require": {
         "php": ">=7.4.0",
-        "illuminate/container": "^7.0|^8.0"
+        "illuminate/container": "^7.0|^8.0|^9.0"
     },
     "suggest": {
         "ext-redis": "Needed to use PhpRedis or PhpRedisCluster manager classes",
